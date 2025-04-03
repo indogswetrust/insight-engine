@@ -2,7 +2,7 @@
 
 import streamlit as st
 import pandas as pd
-import openai
+from openai import OpenAI
 import io
 import matplotlib.pyplot as plt
 import tempfile
@@ -14,7 +14,7 @@ from fpdf import FPDF
 import base64
 
 # --- OpenAI Setup ---
-openai.api_key = st.secrets["OPENAI_API_KEY"]
+client = OpenAI()
 
 # --- UI Setup ---
 st.title("📊 Market Insight Engine: Multi-Dataset Analyzer")
@@ -47,7 +47,7 @@ def send_email_report(recipient, subject, body, attachment_bytes, filename):
     msg.attach(MIMEText(body, 'plain'))
 
     part = MIMEApplication(attachment_bytes, Name=filename)
-    part['Content-Disposition'] = f'attachment; filename=\"{filename}\"'
+    part['Content-Disposition'] = f'attachment; filename="{filename}"'
     msg.attach(part)
 
     with smtplib.SMTP(st.secrets["EMAIL_SMTP"], st.secrets["EMAIL_PORT"]) as server:
@@ -97,7 +97,7 @@ if uploaded_files:
     {combined_summary}
     """
 
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model="gpt-4-turbo",
         messages=[
             {"role": "system", "content": "You are a market analyst specializing in the pet industry."},
