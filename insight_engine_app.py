@@ -61,8 +61,7 @@ def read_file(file):
             ]
         )
         extracted = response.choices[0].message.content
-        return None, f"GPT-4o Vision Extracted from {file.name}:
-{extracted}"
+        return None, f"GPT-4o Vision Extracted from {file.name}:\n{extracted}"
     else:
         return None, None
 
