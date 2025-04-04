@@ -13,7 +13,7 @@ from email.mime.application import MIMEApplication
 from fpdf import FPDF
 import base64
 import fitz  # PyMuPDF
-# import pytesseract  ← Still excluded due to Streamlit Cloud limitations
+import pytesseract  # OCR
 from PIL import Image
 
 # --- OpenAI Setup ---
@@ -23,8 +23,7 @@ client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 st.title("📊 Market Insight Engine: Multi-Source Analyzer")
 st.markdown(
     "Upload up to 5 files: CSV, Excel, PDF (text-based), or images (JPG/PNG). "
-    "You can also paste your own notes. The app will analyze them all together "
-    "to generate actionable, informal business insights."
+    "You can also paste your own notes. When you're ready, click 'Analyze' to generate actionable, informal business insights."
 )
 
 # --- File Upload ---
@@ -35,6 +34,9 @@ uploaded_files = st.file_uploader(
 )
 
 text_input = st.text_area("📋 Paste notes, observations, or qualitative data you want included in the analysis")
+
+# --- Trigger Button ---
+analyze_button = st.button("🔍 Analyze")
 
 # --- Helper to Read Files ---
 def read_file(file):
@@ -49,7 +51,9 @@ def read_file(file):
             text += page.get_text()
         return None, text
     elif file.name.endswith(("jpg", "jpeg", "png")):
-        return None, "[Image OCR not yet supported on Streamlit Cloud]"
+        image = Image.open(file)
+        text = pytesseract.image_to_string(image)
+        return None, f"OCR Extracted from {file.name}:\n{text}"
     else:
         return None, None
 
@@ -87,7 +91,7 @@ def create_pdf(text, filename):
     pdf.output(filename)
 
 # --- Process & Analyze Files ---
-if uploaded_files or text_input:
+if analyze_button and (uploaded_files or text_input):
     summaries = []
     dataframes = []
     extra_texts = []
