@@ -26,6 +26,10 @@ st.markdown(
     "You can also paste your own notes. When you're ready, click 'Analyze' to generate actionable, informal business insights."
 )
 
+# --- Session State Init ---
+if "insights" not in st.session_state:
+    st.session_state.insights = None
+
 # --- File Upload ---
 uploaded_files = st.file_uploader(
     "Upload Data Files (CSV, Excel, PDF, JPG, PNG)",
@@ -61,7 +65,8 @@ def read_file(file):
             ]
         )
         extracted = response.choices[0].message.content
-        return None, f"GPT-4o Vision Extracted from {file.name}:\n{extracted}"
+        return None, f"GPT-4o Vision Extracted from {file.name}:
+{extracted}"
     else:
         return None, None
 
@@ -144,7 +149,11 @@ if analyze_button and (uploaded_files or text_input):
     )
 
     insights = response.choices[0].message.content
-    st.markdown(insights)
+    st.session_state.insights = insights
+
+if st.session_state.insights:
+    st.subheader("🧠 AI-Generated Digestible Insights")
+    st.markdown(st.session_state.insights)
 
     st.subheader("📈 Visual Exploration of Uploaded Datasets")
     for i, df in enumerate(dataframes):
@@ -162,7 +171,7 @@ if analyze_button and (uploaded_files or text_input):
 
     st.subheader("📄 Export Report")
     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as f:
-        create_pdf(insights, f.name)
+        create_pdf(st.session_state.insights, f.name)
         f.flush()
         with open(f.name, "rb") as file_bytes:
             st.download_button("Download Insight Report (PDF)", file_bytes, file_name="insight_report.pdf")
