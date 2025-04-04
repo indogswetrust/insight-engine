@@ -13,8 +13,8 @@ from email.mime.application import MIMEApplication
 from fpdf import FPDF
 import base64
 import fitz  # PyMuPDF
-import pytesseract  # OCR
 from PIL import Image
+import requests
 
 # --- OpenAI Setup ---
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
@@ -51,9 +51,18 @@ def read_file(file):
             text += page.get_text()
         return None, text
     elif file.name.endswith(("jpg", "jpeg", "png")):
-        image = Image.open(file)
-        text = pytesseract.image_to_string(image)
-        return None, f"OCR Extracted from {file.name}:\n{text}"
+        image_bytes = file.read()
+        image_b64 = base64.b64encode(image_bytes).decode("utf-8")
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": "You are an OCR assistant that extracts clean, structured text from images."},
+                {"role": "user", "content": [{"type": "image_url", "image_url": {"url": f"data:image/png;base64,{image_b64}"}}]}
+            ]
+        )
+        extracted = response.choices[0].message.content
+        return None, f"GPT-4o Vision Extracted from {file.name}:
+{extracted}"
     else:
         return None, None
 
