@@ -20,15 +20,20 @@ from PIL import Image
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 # --- UI Setup ---
-st.title("📊 Market Insight Engine: Multi-Dataset Analyzer")
-st.markdown("Upload 2–5 datasets (CSV, Excel, PDF, or image). This app will infer their structure, find relationships, and generate business insights.")
+st.image("pug-suit.png", width=150)
+st.title("📊 Market Insight Engine: Multi-Source Analyzer")
+st.markdown(
+    "Upload up to 5 files: CSV, Excel, PDF (text-based), or images (JPG/PNG). "
+    "You can also paste your own notes. The app will analyze them all together "
+    "to generate actionable, informal business insights."
+)
 
 # --- File Upload ---
 uploaded_files = st.file_uploader(
-    "Upload CSV, Excel, PDF, or Image Files", type=["csv", "xlsx", "pdf", "png", "jpg", "jpeg"], accept_multiple_files=True
+    "Upload Data Files (CSV, Excel, PDF, JPG, PNG)", type=["csv", "xlsx", "pdf", "png", "jpg", "jpeg"], accept_multiple_files=True
 )
 
-text_input = st.text_area("Optional: Paste any qualitative notes, observations, or raw thoughts you'd like included in the analysis.")
+text_input = st.text_area("📋 Paste notes, observations, or qualitative data you want included in the analysis")
 
 # --- Helper to Read Files ---
 def read_file(file):
