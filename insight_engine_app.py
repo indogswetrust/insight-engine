@@ -13,14 +13,13 @@ from email.mime.application import MIMEApplication
 from fpdf import FPDF
 import base64
 import fitz  # PyMuPDF
-import pytesseract
+# import pytesseract  ← Still excluded due to Streamlit Cloud limitations
 from PIL import Image
 
 # --- OpenAI Setup ---
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 # --- UI Setup ---
-st.image("pug-suit.png", width=150)
 st.title("📊 Market Insight Engine: Multi-Source Analyzer")
 st.markdown(
     "Upload up to 5 files: CSV, Excel, PDF (text-based), or images (JPG/PNG). "
@@ -30,7 +29,9 @@ st.markdown(
 
 # --- File Upload ---
 uploaded_files = st.file_uploader(
-    "Upload Data Files (CSV, Excel, PDF, JPG, PNG)", type=["csv", "xlsx", "pdf", "png", "jpg", "jpeg"], accept_multiple_files=True
+    "Upload Data Files (CSV, Excel, PDF, JPG, PNG)",
+    type=["csv", "xlsx", "pdf", "jpg", "jpeg", "png"],
+    accept_multiple_files=True
 )
 
 text_input = st.text_area("📋 Paste notes, observations, or qualitative data you want included in the analysis")
@@ -42,13 +43,13 @@ def read_file(file):
     elif file.name.endswith("xlsx"):
         return pd.read_excel(file), None
     elif file.name.endswith("pdf"):
+        text = ""
         doc = fitz.open(stream=file.read(), filetype="pdf")
-        text = "\n".join(page.get_text() for page in doc)
+        for page in doc:
+            text += page.get_text()
         return None, text
-    elif file.name.endswith(("png", "jpg", "jpeg")):
-        image = Image.open(file)
-        text = pytesseract.image_to_string(image)
-        return None, text
+    elif file.name.endswith(("jpg", "jpeg", "png")):
+        return None, "[Image OCR not yet supported on Streamlit Cloud]"
     else:
         return None, None
 
@@ -97,16 +98,15 @@ if uploaded_files or text_input:
             dataframes.append(df)
             summaries.append(summarize_dataframe(df, file.name))
         elif extracted_text:
-            extra_texts.append(f"Extracted from {file.name}:\n{extracted_text.strip()[:2000]}")
+            extra_texts.append(f"File: {file.name}\n{extracted_text}")
 
     st.subheader("🗂 Dataset Summaries")
     for i, summary in enumerate(summaries):
         with st.expander(f"Dataset {i+1} Summary"):
             st.text(summary)
 
-    combined_summary = "\n\n".join(summaries)
-    combined_text = "\n\n".join(extra_texts)
-    full_context = combined_summary + "\n\n" + combined_text + "\n\nUser Notes:\n" + text_input
+    combined_summary = "\n\n".join(summaries + extra_texts)
+    full_context = combined_summary + "\n\nUser Notes:\n" + text_input
 
     st.subheader("🧠 AI-Generated Digestible Insights")
     prompt = f"""
